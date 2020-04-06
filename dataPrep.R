@@ -82,15 +82,15 @@ write.csv(unempData, file="data/unempFinalData.csv",na="",row.names = F)
 
 
 # employment data by NAICS
-naicsEmp <- subset(read.csv("workingData/14100355.csv", head=TRUE, sep=","), 
-                                select=c(REF_DATE, GEO, Supplementary.unemployment.rates, Sex, Age.group, VALUE))
+# naicsEmp <- subset(read.csv("workingData/14100355.csv", head=TRUE, sep=","), 
+#                                 select=c(REF_DATE, GEO, Supplementary.unemployment.rates, Sex, Age.group, VALUE))
 
 
 
 # employment data by demographics
-14100287
+# 14100287
 
 # employment job tenure
-14100050
+# 14100050
 
 # export final employment data file
