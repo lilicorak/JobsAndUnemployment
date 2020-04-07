@@ -6,8 +6,7 @@ require(cansim)
 
 # unemployment data
 # seasonally adjusted unemployment data
-adjUnemp <- subset(#read.csv("workingData/14100287.csv", head=TRUE, sep=","), 
-                    get_cansim("14-10-0287"),
+adjUnemp <- subset(get_cansim("14-10-0287"),
                     select=c(REF_DATE, GEO, `Labour force characteristics`, Sex, `Age group`, Statistics, `Data type`, VALUE),
                     `Labour force characteristics` %in% c("Unemployment", "Unemployment rate") &
                       Statistics == "Estimate" &
@@ -24,8 +23,7 @@ adjUnemp <- subset(adjUnemp, select=-c(REF_DATE, `Labour force characteristics`,
 
 
 # non-seasonally adjusted supplementary unemployment rates
-suppUnemp <- subset(#read.csv("workingData/14100077.csv", head=TRUE, sep=","), 
-                    get_cansim("14-10-0077"),
+suppUnemp <- subset(get_cansim("14-10-0077"),
                         select=c(REF_DATE, GEO, `Supplementary unemployment rates`, Sex, `Age group`, VALUE),
                         `Supplementary unemployment rates` %in% c("R4 - official rate", 
                                                                 "R8 - plus discouraged searchers, waiting group, portion of involuntary part-timers") &
@@ -42,8 +40,7 @@ suppUnemp <- subset(suppUnemp, select=-c(REF_DATE, `Supplementary unemployment r
 
 
 # unemployment by reason for leaving job
-reasonUnemp <- subset(#read.csv("workingData/14100125.csv", head=TRUE, sep=","), 
-                      get_cansim("14-10-0125"),
+reasonUnemp <- subset(get_cansim("14-10-0125"),
                       select=c(REF_DATE, GEO, Reason, Characteristics, Sex, `Age group`, VALUE),
                       Reason != "Have not worked in the last year" &
                       Reason != "Never worked" &
@@ -58,8 +55,7 @@ reasonUnemp$refPeriod <- as.Date(paste0(reasonUnemp$REF_DATE,"-01"))
 reasonUnemp <- subset(reasonUnemp, select=-c(REF_DATE, Reason, Characteristics))
 
 # short unemployment estimate
-shortUnemp <- subset(#read.csv("workingData/14100342.csv", head=TRUE, sep=","), 
-                     get_cansim("14-10-0342"),
+shortUnemp <- subset(get_cansim("14-10-0342"),
                      select=c(REF_DATE, GEO, `Duration of unemployment`, Sex, `Age group`, Statistics, `Data type`, VALUE),
                      `Duration of unemployment` == "1 to 4 weeks" &
                      Statistics == "Estimate" &
