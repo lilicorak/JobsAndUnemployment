@@ -34,7 +34,7 @@ suppUnemp <- subset(#read.csv("workingData/14100077.csv", head=TRUE, sep=","),
 suppUnemp$Statistics <- revalue(suppUnemp$`Supplementary unemployment rates`, 
                                             c("R4 - official rate" = "Official unemployment rate, not seasonally adjusted",
                                               "R8 - plus discouraged searchers, waiting group, portion of involuntary part-timers" =
-                                                "Comprehensive unemployment rate, not seasonally adjusted "))
+                                                "Comprehensive unemployment rate, not seasonally adjusted"))
 
 suppUnemp$refPeriod <- as.Date(paste0(suppUnemp$REF_DATE,"-01"))
 
@@ -83,19 +83,65 @@ unempData$GEO <- revalue(unempData$GEO, c("Newfoundland and Labrador" = "NL", "P
 write.csv(unempData, file="data/unempFinalData.csv",na="",row.names = F)
 
 
+### Employment data
+
+# number and rate employed
+# 14100287
+adjEmp <- subset(get_cansim("14-10-0287"),
+                 select=c(REF_DATE, GEO, `Labour force characteristics`, Sex, `Age group`, Statistics, `Data type`, VALUE),
+                 `Labour force characteristics` %in% c("Employment", "Employment rate") &
+                   Statistics == "Estimate" &
+                   `Data type` == "Seasonally adjusted" &
+                   `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"))
+
+adjEmp$Statistics <- revalue(adjEmp$`Labour force characteristics`,
+                               c("Employment" = "Number employed (x1,000)", 
+                                 "Employment rate" = "Employment rate, seasonally adjusted"))
+
+adjEmp$refPeriod <- as.Date(paste0(adjEmp$REF_DATE,"-01"))
+
+adjEmp <- subset(adjEmp, select=-c(REF_DATE, `Labour force characteristics`, `Data type`))
 
 
+# number employed 1 to 3 months
+# 14100050
+shortEmp <- subset(get_cansim("14-10-0050"),
+                 select=c(REF_DATE, GEO, `Job tenure`, Sex, `Age group`, `Type of work`, VALUE),
+                 `Job tenure` == "1 to 3 months" &
+                   `Type of work` == "Both full and part-time employment" &
+                   `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"))
+
+shortEmp$Statistics <- revalue(shortEmp$`Job tenure`,
+                             c("1 to 3 months" = "Number employed three months or less (x1,000)"))
+
+shortEmp$refPeriod <- as.Date(paste0(shortEmp$REF_DATE,"-01"))
+
+shortEmp <- subset(shortEmp, select=-c(REF_DATE, `Job tenure`, `Type of work`))
 
 # employment data by NAICS
-# naicsEmp <- subset(read.csv("workingData/14100355.csv", head=TRUE, sep=","), 
-#                                 select=c(REF_DATE, GEO, `Supplementary unemployment rates`, Sex, `Age group`, VALUE))
+naicsEmp <- subset(get_cansim("14-10-0355"),
+                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Data type`, `Statistics`, VALUE),
+                   `Data type` == "Seasonally adjusted" &
+                     `Statistics` == "Estimate" &
+                     `North American Industry Classification System (NAICS)` != "Total employed, all industries")
 
+naicsEmp$Statistics <- naicsEmp$`North American Industry Classification System (NAICS)`
 
+naicsEmp$refPeriod <- as.Date(paste0(naicsEmp$REF_DATE,"-01"))
 
-# employment data by demographics
-# 14100287
+naicsEmp$Sex <- "Both sexes"
 
-# employment job tenure
-# 14100050
+naicsEmp$`Age group` <- "15 years and over"
+
+naicsEmp <- subset(naicsEmp, select=-c(REF_DATE, `North American Industry Classification System (NAICS)`, `Data type`))
+
 
 # export final employment data file
+empData <- rbind(adjEmp, shortEmp, naicsEmp)
+
+empData$GEO <- revalue(empData$GEO, c("Newfoundland and Labrador" = "NL", "Prince Edward Island" = "PE",
+                                          "Nova Scotia" = "NS", "New Brunswick" = "NB", "Quebec" ="QC",
+                                          "Ontario" = "ON", "Manitoba" ="MB", "Saskatchewan" = "SK", "Alberta" = "AB",
+                                          "British Columbia" = "BC"))
+
+write.csv(empData, file="data/empFinalData.csv",na="",row.names = F)
