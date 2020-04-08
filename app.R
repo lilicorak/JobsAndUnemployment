@@ -16,6 +16,7 @@ require(ggsci)
 require(mapcan)
 require(rapport)
 
+
 # read in unemployment data
 unempData <- read.csv("data/unempFinalData.csv", head=T, sep=",")
 unempData$GEO <- factor(unempData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
@@ -351,7 +352,6 @@ server <- function(input, output, session) {
                                        width = 45), collapse = "\n"))
     
     girafe(ggobj = unempMapPlot, width_svg = 5)})
-    
   })
   
   # Plot of statistic over reference period
@@ -399,13 +399,10 @@ server <- function(input, output, session) {
                              colour=NULL) 
     
     girafe(ggobj = unempYearsPlot, width_svg = 8, height_svg = 4)})
-    
   })
 
   unempSexData <- reactive ({
-    input$updateUnemp
-    
-    isolate({unempData$highlight <- ifelse((unempData$Sex == input$unempSex), 1, ifelse((input$unempSex == "Both sexes"),1,0))
+    unempData$highlight <- ifelse((unempData$Sex == input$unempSex), 1, ifelse((input$unempSex == "Both sexes"),1,0))
     
     thismonth <- input$unempRefPeriod[2]
     lastmonth <- seq(input$unempRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -421,7 +418,7 @@ server <- function(input, output, session) {
                     Sex != "Both sexes" &
                     Age.group == input$unempAge &
                     substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))})
+                    Statistics == input$unempStatistic))
     })
   
   output$unempSexPlot <- renderGirafe({
@@ -435,14 +432,13 @@ server <- function(input, output, session) {
                            x="Sex",
                            fill = NULL,
                            title = paste(strwrap(paste0(input$unempStatistic," by sex, ",
-                                                        format(input$unempRefPeriod[2], "%b %Y")), width = 40), collapse = "\n"))
+                                                        format(input$unempRefPeriod[2], "%b %Y")), width = 35), collapse = "\n"))
     
     girafe(ggobj = unempSexPlot, height_svg = 5, width_svg = 4)})
   })
   
   unempAgeData <- reactive ({
-    input$updateUnemp
-    isolate({unempData$highlight <- ifelse((unempData$Age.group == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
+    unempData$highlight <- ifelse((unempData$Age.group == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
     
     thismonth <- input$unempRefPeriod[2]
     lastmonth <- seq(input$unempRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -458,7 +454,7 @@ server <- function(input, output, session) {
                     Sex == input$unempSex &
                     Age.group != "15 years and over" &
                     substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))})
+                    Statistics == input$unempStatistic))
     })
   
   output$unempAgePlot <- renderGirafe({
@@ -472,9 +468,10 @@ server <- function(input, output, session) {
                      x="Age group", 
                      fill = NULL,
                      title = paste(strwrap(paste0(input$unempStatistic," by age group, ",
-                                                  format(input$unempRefPeriod[2], "%b %Y")), width = 40), collapse = "\n"))
+                                                  format(input$unempRefPeriod[2], "%b %Y")), width = 35), collapse = "\n"))
               
-              girafe(ggobj = unempAgePlot, height_svg = 5, width_svg = 4)})
+              girafe(ggobj = unempAgePlot, height_svg = 5, width_svg = 4)
+              })
 
   })
   
@@ -515,22 +512,22 @@ server <- function(input, output, session) {
       updateSelectInput(session, "empSex",
                         label = "Select sex:",
                         choices = c("Both sexes", "Males", "Females"),
-                        selected = "Both sexes")
+                        selected = input$empSex)
       
       updateSelectInput(session, "empAge",
                         label = "Select age group:",
                         choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                        selected = "15 years and over")
+                        selected = input$empAge)
       
       updateCheckboxGroupInput(session, "empBySex",
                                label = "Select sex:",
                                choices = c("Both sexes", "Males", "Females"),
-                               selected = NULL)
+                               selected = input$empBySex)
       
       updateCheckboxGroupInput(session, "empByAge",
                                label = "Select age group:",
                                choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                               selected = NULL)
+                               selected = input$empByAge)
       
     }
   })
@@ -616,9 +613,7 @@ server <- function(input, output, session) {
   })
   
   empSexData <- reactive ({
-    input$updateEmp
-    
-    isolate({empData$highlight <- ifelse((empData$Sex == input$empSex), 1, ifelse((input$empSex == "Both sexes"),1,0))
+    empData$highlight <- ifelse((empData$Sex == input$empSex), 1, ifelse((input$empSex == "Both sexes"),1,0))
     
     thismonth <- input$empRefPeriod[2]
     lastmonth <- seq(input$empRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -634,7 +629,7 @@ server <- function(input, output, session) {
                     Sex != "Both sexes" &
                     Age.group == input$empAge &
                     substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))})
+                    Statistics == input$empStatistic))
   })
   
   output$empSexPlot <- renderGirafe({
@@ -648,14 +643,13 @@ server <- function(input, output, session) {
            x="Sex",
            fill = NULL,
            title = paste(strwrap(paste0(input$empStatistic," by sex, ",
-                                        format(input$empRefPeriod[2], "%b %Y")), width = 40), collapse = "\n"))
+                                        format(input$empRefPeriod[2], "%b %Y")), width = 35), collapse = "\n"))
     
     girafe(ggobj = empSexPlot, height_svg = 5, width_svg = 4)})
   })
   
   empAgeData <- reactive ({
-    input$updateEmp
-    isolate({empData$highlight <- ifelse((empData$Age.group == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
+    empData$highlight <- ifelse((empData$Age.group == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
     
     thismonth <- input$empRefPeriod[2]
     lastmonth <- seq(input$empRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -671,7 +665,7 @@ server <- function(input, output, session) {
                     Sex == input$empSex &
                     Age.group != "15 years and over" &
                     substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))})
+                    Statistics == input$empStatistic))
   })
   
   output$empAgePlot <- renderGirafe({
@@ -685,7 +679,7 @@ server <- function(input, output, session) {
            x="Age group", 
            fill = NULL,
            title = paste(strwrap(paste0(input$empStatistic," by age group, ",
-                                        format(input$empRefPeriod[2], "%b %Y")), width = 40), collapse = "\n"))
+                                        format(input$empRefPeriod[2], "%b %Y")), width = 35), collapse = "\n"))
     
     girafe(ggobj = empAgePlot, height_svg = 5, width_svg = 4)})
     
