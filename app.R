@@ -142,7 +142,7 @@ ui <- fluidPage(
                          checkboxGroupInput(
                            "unempByAge",
                            label = NULL,
-                           choices = c("15 years and over","15 to 24 years","25 to 44 years","45 years and over")
+                           choices = c("15 years and over","15 to 24 years","25 to 54 years","55 years and over")
                          )
                        )
                      ),
@@ -282,7 +282,7 @@ ui <- fluidPage(
                          checkboxGroupInput(
                            "empByAge",
                            label = NULL,
-                           choices = c("15 years and over","15 to 24 years","25 to 44 years","45 years and over")
+                           choices = c("15 years and over","15 to 24 years","25 to 54 years","55 years and over")
                          )
                        )
                      ),
