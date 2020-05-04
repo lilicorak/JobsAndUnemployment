@@ -1,4 +1,6 @@
 
+# create wide data files rather than long
+
 #install.packages("plyr", "cansim")
 
 require(plyr)
