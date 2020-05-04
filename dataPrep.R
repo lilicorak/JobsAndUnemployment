@@ -1,10 +1,11 @@
 
 # create wide data files rather than long
 
-#install.packages("plyr", "cansim")
+#install.packages(c("plyr", "cansim", "tidyr"))
 
 require(plyr)
 require(cansim)
+require(tidyr)
 
 # unemployment data
 # seasonally adjusted unemployment data
@@ -77,12 +78,14 @@ shortUnemp <- subset(shortUnemp, select=-c(REF_DATE, `Duration of unemployment`,
 # export final unemployment file
 unempData <- rbind(adjUnemp, suppUnemp, reasonUnemp, shortUnemp)
 
-unempData$GEO <- revalue(unempData$GEO, c("Newfoundland and Labrador" = "NL", "Prince Edward Island" = "PE",
+unempDataWide <- spread(unempData, key=Statistics, value=VALUE)
+
+unempDataWide$GEO <- revalue(unempDataWide$GEO, c("Newfoundland and Labrador" = "NL", "Prince Edward Island" = "PE",
                                       "Nova Scotia" = "NS", "New Brunswick" = "NB", "Quebec" ="QC",
                                       "Ontario" = "ON", "Manitoba" ="MB", "Saskatchewan" = "SK", "Alberta" = "AB",
                                       "British Columbia" = "BC"))
 
-write.csv(unempData, file="data/unempFinalData.csv",na="",row.names = F)
+write.csv(unempDataWide, file="data/unempFinalDataWide.csv",na="",row.names = F)
 
 
 ### Employment data
@@ -144,10 +147,12 @@ naicsEmp <- subset(naicsEmp, select=-c(REF_DATE, `North American Industry Classi
 # export final employment data file
 empData <- rbind(adjEmp, shortEmp, naicsEmp)
 
-empData$GEO <- revalue(empData$GEO, c("Newfoundland and Labrador" = "NL", "Prince Edward Island" = "PE",
+empDataWide <- spread(empData, key=Statistics, value=VALUE)
+
+empDataWide$GEO <- revalue(empDataWide$GEO, c("Newfoundland and Labrador" = "NL", "Prince Edward Island" = "PE",
                                           "Nova Scotia" = "NS", "New Brunswick" = "NB", "Quebec" ="QC",
                                           "Ontario" = "ON", "Manitoba" ="MB", "Saskatchewan" = "SK", "Alberta" = "AB",
                                           "British Columbia" = "BC"))
 
-write.csv(empData, file="data/empFinalData.csv",na="",row.names = F)
+write.csv(empDataWide, file="data/empFinalDataWide.csv",na="",row.names = F)
 
