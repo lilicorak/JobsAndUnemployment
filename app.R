@@ -1,3 +1,6 @@
+
+# use wide data files
+
 # install.packages(c("rsconnect", "shiny", "ggplot2", "scales", "shinythemes", "tidyverse",
 # "shinyWidgets", "ggrepel", "itertools", "ggiraph", "maps", "ggsci", "mapcan", "rapport"))
 
@@ -18,16 +21,16 @@ require(rapport)
 
 
 # read in unemployment data
-unempData <- read.csv("data/unempFinalData.csv", head=T, sep=",")
+unempData <- read.csv("data/unempFinalDataWide.csv", head=T, sep=",", check.names = FALSE)
 unempData$GEO <- factor(unempData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
-unempData$Age.group <- factor(unempData$Age.group, levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
+unempData$"Age group" <- factor(unempData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 unempData$Sex <- factor(unempData$Sex, levels = c("Both sexes", "Males", "Females"))
 unempData$refPeriod <- as.Date(unempData$refPeriod)
 
 # read in employment data
-empData <- read.csv("data/empFinalData.csv", head=T, sep=",")
+empData <- read.csv("data/empFinalDataWide.csv", head=T, sep=",", check.names = FALSE)
 empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
-empData$Age.group <- factor(empData$Age.group, levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
+empData$"Age group" <- factor(empData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 empData$Sex <- factor(empData$Sex, levels = c("Both sexes", "Males", "Females"))
 empData$refPeriod <- as.Date(empData$refPeriod)
 
@@ -326,11 +329,11 @@ server <- function(input, output, session) {
   ### unemployment plots
   output$unempMap <- renderGirafe({
     input$updateUnemp
-    isolate({unempMapData <- subset(unempData, Statistics == input$unempStatistic  &
-                                substr(refPeriod,0,7) == substr(input$unempRefPeriod[2],0,7) &
-                                Sex == input$unempSex &
-                                Age.group == input$unempAge &
-                                GEO != "Canada")
+    isolate({unempMapData <- subset(unempData,
+                                    substr(refPeriod,0,7) == substr(input$unempRefPeriod[2],0,7) &
+                                      Sex == input$unempSex &
+                                      `Age group` == input$unempAge &
+                                      GEO != "Canada")
     
     unempMapData$GEO <- as.character(unempMapData$GEO)
     
@@ -341,13 +344,13 @@ server <- function(input, output, session) {
     unempMapPlot <- ggplot() +
       geom_polygon_interactive(data=unempMapData, 
                                aes(x = long, y = lat, group = group, 
-                                   fill=VALUE, tooltip=paste(pr_alpha, VALUE))) +
+                                   fill=unlist(unempMapData[input$unempStatistic]), tooltip=paste(pr_alpha, unlist(unempMapData[input$unempStatistic])))) +
       coord_fixed() +
       theme(legend.position = "bottom", axis.title = element_blank(),
             axis.text = element_blank(), axis.ticks = element_blank(), panel.spacing = element_blank(),
             legend.box.spacing = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
             text=element_text(family="Roboto")) +
-      scale_fill_material("blue", name=paste(strwrap(paste(input$unempStatistic),width=25), collapse="\n")) +
+      scale_fill_material("blue", name=paste(strwrap(paste(input$unempStatistic),width=25), collapse="\n"), n.breaks=4) +
       labs(title= paste(strwrap(paste0(input$unempStatistic,", ",format(input$unempRefPeriod[2], "%b %Y")), 
                                        width = 45), collapse = "\n"))
     
@@ -358,17 +361,15 @@ server <- function(input, output, session) {
   output$unempYears <- renderGirafe({
     (input$updateUnemp | input$updateYearsUnemp)
     isolate({if (is.null(input$unempByGeo) & is.null(input$unempByAge) & is.null(input$unempBySex)) 
-      unempYearsData <- subset(unempData, Statistics == input$unempStatistic &
-                                  substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
+      unempYearsData <- subset(unempData, substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
                                   substr(refPeriod,0,7) <= substr(input$unempRefPeriod[2],0,7) &
-                                  Age.group == input$unempAge &
+                                 `Age group` == input$unempAge &
                                   Sex == input$unempSex &
                                   GEO == input$unempGeo)
-    else unempYearsData <- subset(unempData, Statistics == input$unempStatistic &
-                                    substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
+    else unempYearsData <- subset(unempData, substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
                                     substr(refPeriod,0,7) <= substr(input$unempRefPeriod[2],0,7) &
-                                     {if (is.null(input$unempByAge)) Age.group == input$unempAge
-                                       else Age.group %in% input$unempByAge} &
+                                     {if (is.null(input$unempByAge)) `Age group` == input$unempAge
+                                       else `Age group` %in% input$unempByAge} &
                                        {if (is.null(input$unempBySex)) Sex == input$unempSex
                                          else Sex %in% input$unempBySex} &
                                          {if (is.null(input$unempByGeo)) GEO == input$unempGeo
@@ -379,16 +380,16 @@ server <- function(input, output, session) {
                     !is.null(input$unempByAge),
                     !is.null(input$unempBySex))
     
-    byVars <- c("GEO", "Age.group", "Sex")
+    byVars <- c("GEO", "Age group", "Sex")
     
     byVars <- byVars[unlist(byVarsBool)]
     
     unempYearsPlot <- ggplot(unempYearsData) + 
-                        {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=VALUE, colour=interaction(unempYearsData[,byVars], drop=T, sep=", ")), size=1) 
-                          else geom_line(aes(x=refPeriod, y=VALUE, colour=Statistics), size=1)} +
-                        {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE),
+                        {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), colour=interaction(unempYearsData[,byVars], drop=T, sep=", ")), size=1) 
+                          else geom_line(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), colour=GEO), size=1)} +
+                        {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(unempYearsData[input$unempStatistic])),
                                                                                         colour=interaction(unempYearsData[,byVars] ,drop=T, sep=", ")), size = 1.25)
-                          else geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE), colour=Statistics), size = 1.25)} +
+                          else geom_point_interactive(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(unempYearsData[input$unempStatistic])), colour=GEO), size = 1.25)} +
                         theme_classic() + scale_y_continuous(labels = comma) +
                         {if (!rapportools::is.empty(byVars)) guides(colour = "legend") else guides(colour=F)} +
                         scale_colour_jco() +
@@ -416,17 +417,17 @@ server <- function(input, output, session) {
     return(subset(unempData,
                   GEO == input$unempGeo &
                     Sex != "Both sexes" &
-                    Age.group == input$unempAge &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))
+                    `Age group` == input$unempAge &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
     })
   
   output$unempSexPlot <- renderGirafe({
     input$updateUnemp
     isolate({unempSexPlot <- ggplot(unempSexData()) + 
-                      geom_col_interactive(aes(x=Sex, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position="dodge") + 
+                      geom_col_interactive(aes(x=Sex, y=unlist(unempSexData()[input$unempStatistic]), alpha = highlight, 
+                                               fill=month, tooltip=unlist(unempSexData()[input$unempStatistic])), position="dodge") + 
                       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-                      scale_alpha(range = c(max(0.45, min(unempSexData()$highlight)),1)) +
+                      scale_alpha(range = c(max(0.45, min(unempSexData()$highlight)),1)) + scale_y_continuous(labels = comma) +
                       guides(alpha = FALSE) +
                       labs(y=paste(strwrap(paste(input$unempStatistic),width=35), collapse="\n"), 
                            x="Sex",
@@ -438,7 +439,7 @@ server <- function(input, output, session) {
   })
   
   unempAgeData <- reactive ({
-    unempData$highlight <- ifelse((unempData$Age.group == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
+    unempData$highlight <- ifelse((unempData$`Age group` == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
     
     thismonth <- input$unempRefPeriod[2]
     lastmonth <- seq(input$unempRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -452,17 +453,17 @@ server <- function(input, output, session) {
     return(subset(unempData,
                   GEO == input$unempGeo &
                     Sex == input$unempSex &
-                    Age.group != "15 years and over" &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))
+                    `Age group` != "15 years and over" &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
     })
   
   output$unempAgePlot <- renderGirafe({
     input$updateUnemp
     isolate({unempAgePlot <- ggplot(unempAgeData()) + 
-                geom_col_interactive(aes(x=Age.group, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position = "dodge") + 
-                theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-                scale_alpha(range = c(max(0.45, min(unempAgeData()$highlight)),1)) +
+                geom_col_interactive(aes(x=`Age group`, y=unlist(unempAgeData()[input$unempStatistic]), alpha = highlight, 
+                                         fill=month, tooltip=unlist(unempAgeData()[input$unempStatistic])), position = "dodge") + 
+                theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") + 
+                scale_alpha(range = c(max(0.45, min(unempAgeData()$highlight)),1)) + scale_y_continuous(labels = comma) +
                 guides(alpha = FALSE) +
                 labs(y=paste(strwrap(paste(input$unempStatistic),width=35), collapse="\n"), 
                      x="Age group", 
@@ -535,10 +536,9 @@ server <- function(input, output, session) {
   ### employment plots
   output$empMap <- renderGirafe({
     input$updateEmp
-    isolate({empMapData <- subset(empData, Statistics == input$empStatistic  &
-                                      substr(refPeriod,0,7) == substr(input$empRefPeriod[2],0,7) &
+    isolate({empMapData <- subset(empData, substr(refPeriod,0,7) == substr(input$empRefPeriod[2],0,7) &
                                       Sex == input$empSex &
-                                      Age.group == input$empAge &
+                                      `Age group` == input$empAge &
                                       GEO != "Canada")
     
     empMapData$GEO <- as.character(empMapData$GEO)
@@ -550,13 +550,13 @@ server <- function(input, output, session) {
     empMapPlot <- ggplot() +
       geom_polygon_interactive(data=empMapData, 
                                aes(x = long, y = lat, group = group, 
-                                   fill=VALUE, tooltip=paste(pr_alpha, VALUE))) +
+                                   fill=unlist(empMapData[input$empStatistic]), tooltip=paste(pr_alpha, unlist(empMapData[input$empStatistic])))) +
       coord_fixed() +
       theme(legend.position = "bottom", axis.title = element_blank(),
             axis.text = element_blank(), axis.ticks = element_blank(), panel.spacing = element_blank(),
             legend.box.spacing = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
             text=element_text(family="Roboto")) +
-      scale_fill_material("blue", name=paste(strwrap(paste(input$empStatistic),width=25), collapse="\n")) +
+      scale_fill_material("blue", name=paste(strwrap(paste(input$empStatistic),width=25), collapse="\n"), n.breaks = 4) +
       labs(title= paste(strwrap(paste0(input$empStatistic,", ",format(input$empRefPeriod[2], "%b %Y")), 
                                 width = 45), collapse = "\n"))
     
@@ -568,17 +568,15 @@ server <- function(input, output, session) {
   output$empYears <- renderGirafe({
     (input$updateEmp | input$updateYearsEmp)
     isolate({if (is.null(input$empByGeo) & is.null(input$empByAge) & is.null(input$empBySex)) 
-      empYearsData <- subset(empData, Statistics == input$empStatistic &
-                                 substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
+      empYearsData <- subset(empData, substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
                                  substr(refPeriod,0,7) <= substr(input$empRefPeriod[2],0,7) &
-                                 Age.group == input$empAge &
+                                 `Age group` == input$empAge &
                                  Sex == input$empSex &
                                  GEO == input$empGeo)
-    else empYearsData <- subset(empData, Statistics == input$empStatistic &
-                                    substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
+    else empYearsData <- subset(empData, substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
                                     substr(refPeriod,0,7) <= substr(input$empRefPeriod[2],0,7) &
-                                    {if (is.null(input$empByAge)) Age.group == input$empAge
-                                      else Age.group %in% input$empByAge} &
+                                    {if (is.null(input$empByAge)) `Age group` == input$empAge
+                                      else `Age group` %in% input$empByAge} &
                                       {if (is.null(input$empBySex)) Sex == input$empSex
                                         else Sex %in% input$empBySex} &
                                         {if (is.null(input$empByGeo)) GEO == input$empGeo
@@ -594,11 +592,11 @@ server <- function(input, output, session) {
     byVars <- byVars[unlist(byVarsBool)]
     
     empYearsPlot <- ggplot(empYearsData) + 
-    {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=VALUE, colour=interaction(empYearsData[,byVars], drop=T, sep=", ")), size=1) 
-      else geom_line(aes(x=refPeriod, y=VALUE, colour=Statistics), size=1)} +
-      {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE),
+    {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), colour=interaction(empYearsData[,byVars], drop=T, sep=", ")), size=1) 
+      else geom_line(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), colour=GEO), size=1)} +
+      {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(empYearsData[input$empStatistic])),
                                                                          colour=interaction(empYearsData[,byVars] ,drop=T, sep=", ")), size = 1.25)
-        else geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE), colour=Statistics), size = 1.25)} +
+        else geom_point_interactive(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(empYearsData[input$empStatistic])), colour=GEO), size = 1.25)} +
       theme_classic() + scale_y_continuous(labels = comma) +
       {if (!rapportools::is.empty(byVars)) guides(colour = "legend") else guides(colour=F)} +
       scale_colour_jco() +
@@ -627,17 +625,17 @@ server <- function(input, output, session) {
     return(subset(empData,
                   GEO == input$empGeo &
                     Sex != "Both sexes" &
-                    Age.group == input$empAge &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))
+                    `Age group` == input$empAge &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
   })
   
   output$empSexPlot <- renderGirafe({
     input$updateEmp
     isolate({empSexPlot <- ggplot(empSexData()) + 
-      geom_col_interactive(aes(x=Sex, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position="dodge") + 
+      geom_col_interactive(aes(x=Sex, y=unlist(empSexData()[input$empStatistic]), alpha = highlight, 
+                               fill=month, tooltip=unlist(empSexData()[input$empStatistic])), position="dodge") + 
       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-      scale_alpha(range = c(max(0.45, min(empSexData()$highlight)),1)) +
+      scale_alpha(range = c(max(0.45, min(empSexData()$highlight)),1)) + scale_y_continuous(labels = comma) +
       guides(alpha = FALSE) +
       labs(y=paste(strwrap(paste(input$empStatistic),width=35), collapse="\n"), 
            x="Sex",
@@ -649,7 +647,7 @@ server <- function(input, output, session) {
   })
   
   empAgeData <- reactive ({
-    empData$highlight <- ifelse((empData$Age.group == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
+    empData$highlight <- ifelse((empData$`Age group` == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
     
     thismonth <- input$empRefPeriod[2]
     lastmonth <- seq(input$empRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -663,17 +661,17 @@ server <- function(input, output, session) {
     return(subset(empData,
                   GEO == input$empGeo &
                     Sex == input$empSex &
-                    Age.group != "15 years and over" &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))
+                    `Age group` != "15 years and over" &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
   })
   
   output$empAgePlot <- renderGirafe({
     input$updateEmp
     isolate({empAgePlot <- ggplot(empAgeData()) + 
-      geom_col_interactive(aes(x=Age.group, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position = "dodge") + 
+      geom_col_interactive(aes(x=`Age group`, y=unlist(empAgeData()[input$empStatistic]), alpha = highlight, 
+                               fill=month, tooltip=unlist(empAgeData()[input$empStatistic])), position = "dodge") + 
       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-      scale_alpha(range = c(max(0.45, min(empAgeData()$highlight)),1)) +
+      scale_alpha(range = c(max(0.45, min(empAgeData()$highlight)),1)) + scale_y_continuous(labels = comma) +
       guides(alpha = FALSE) +
       labs(y=paste(strwrap(paste(input$empStatistic),width=35), collapse="\n"), 
            x="Age group", 
