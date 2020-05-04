@@ -2,7 +2,7 @@
 # use wide data files
 
 # install.packages(c("rsconnect", "shiny", "ggplot2", "scales", "shinythemes", "tidyverse",
-# "shinyWidgets", "ggrepel", "itertools", "ggiraph", "maps", "ggsci", "mapcan", "rapport"))
+# "shinyWidgets", "ggrepel", "itertools", "ggiraph", "maps", "ggsci", "mapcan", "rapport", "data.table"))
 
 require(rsconnect)
 require(shiny)
@@ -18,17 +18,17 @@ require(maps)
 require(ggsci)
 require(mapcan)
 require(rapport)
-
+require(data.table)
 
 # read in unemployment data
-unempData <- read.csv("data/unempFinalDataWide.csv", head=T, sep=",", check.names = FALSE)
+unempData <- fread("data/unempFinalDataWide.csv", sep=",", check.names = FALSE, data.table = FALSE)
 unempData$GEO <- factor(unempData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
 unempData$"Age group" <- factor(unempData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 unempData$Sex <- factor(unempData$Sex, levels = c("Both sexes", "Males", "Females"))
 unempData$refPeriod <- as.Date(unempData$refPeriod)
 
 # read in employment data
-empData <- read.csv("data/empFinalDataWide.csv", head=T, sep=",", check.names = FALSE)
+empData <- fread("data/empFinalDataWide.csv", sep=",", check.names = FALSE, data.table = FALSE)
 empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
 empData$"Age group" <- factor(empData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 empData$Sex <- factor(empData$Sex, levels = c("Both sexes", "Males", "Females"))
