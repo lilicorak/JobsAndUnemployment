@@ -57,16 +57,16 @@ ui <- fluidPage(
                                "Official unemployment rate, not seasonally adjusted",
                                "Comprehensive unemployment rate, not seasonally adjusted",
                                "Number unemployed one month or less (x1,000)",
-                               "Number unemployed by reason (x1,000)" = c("Job leavers",
-                                                                          "Own illness or disability",
-                                                                          "Personal or family reasons",
-                                                                          "Going to school",
-                                                                          "Dissatisfied",
-                                                                          "Retired",
-                                                                          "Other reasons",
-                                                                          "Jobs losers",
-                                                                          "Permanent layoff",
-                                                                          "Temporary layoff")),
+                               "Number unemployed by reason (x1,000)" = c("Number unemployed, Job leavers",
+                                                                          "Number unemployed, Own illness or disability",
+                                                                          "Number unemployed, Personal or family reasons",
+                                                                          "Number unemployed, Going to school",
+                                                                          "Number unemployed, Dissatisfied",
+                                                                          "Number unemployed, Retired",
+                                                                          "Number unemployed, Other reasons",
+                                                                          "Number unemployed, Jobs losers",
+                                                                          "Number unemployed, Permanent layoff",
+                                                                          "Number unemployed, Temporary layoff")),
                              selected = "Number unemployed (x1,000)"
                  ),
                  sliderInput("unempRefPeriod",
@@ -188,24 +188,44 @@ ui <- fluidPage(
                                "Number employed (x1,000)",
                                "Employment rate, seasonally adjusted",
                                "Number employed three months or less (x1,000)",
-                               "Number employed by industry (x1,000)" = c("Goods-producing sector",
-                                                                          "Agriculture [111-112, 1100, 1151-1152]",
-                                                                          "Forestry, fishing, mining, quarrying, oil and gas [21, 113-114, 1153, 2100]",
-                                                                          "Utilities [22]",
-                                                                          "Construction [23]",
-                                                                          "Manufacturing [31-33]",
-                                                                          "Services-producing sector",
-                                                                          "Wholesale and retail trade [41, 44-45]",
-                                                                          "Transportation and warehousing [48-49]",
-                                                                          "Finance, insurance, real estate, rental and leasing [52-53]",
-                                                                          "Professional, scientific and technical services [54]",
-                                                                          "Business, building and other support services [55-56]",
-                                                                          "Educational services [61]",
-                                                                          "Health care and social assistance [62]",
-                                                                          "Information, culture and recreation [51, 71]",
-                                                                          "Accommodation and food services [72]",
-                                                                          "Other services (except public administration) [81]",
-                                                                          "Public administration [91]")
+                               "Number employed by industry (x1,000)" = c("Number employed, Total employed, all industries",
+                                                                          "Number employed, Goods-producing sector",
+                                                                          "Number employed, Agriculture",
+                                                                          "Number employed, Forestry, fishing, mining, quarrying, oil and gas",
+                                                                          "Number employed, Utilities",
+                                                                          "Number employed, Construction",
+                                                                          "Number employed, Manufacturing",
+                                                                          "Number employed, Services-producing sector",
+                                                                          "Number employed, Wholesale and retail trade",
+                                                                          "Number employed, Transportation and warehousing",
+                                                                          "Number employed, Finance, insurance, real estate, rental and leasing",
+                                                                          "Number employed, Professional, scientific and technical services",
+                                                                          "Number employed, Business, building and other support services",
+                                                                          "Number employed, Educational services",
+                                                                          "Number employed, Health care and social assistance",
+                                                                          "Number employed, Information, culture and recreation",
+                                                                          "Number employed, Accommodation and food services",
+                                                                          "Number employed, Other services (except public administration)",
+                                                                          "Number employed, Public administration"),
+                               "Actual hours worked at main job (x1,000)" = c("Actual hours worked, Total actual hours worked, all industries",
+                                                                              "Actual hours worked, Goods-producing sector",
+                                                                              "Actual hours worked, Agriculture",
+                                                                              "Actual hours worked, Forestry, fishing, mining, quarrying, oil and gas",
+                                                                              "Actual hours worked, Utilities",
+                                                                              "Actual hours worked, Construction",
+                                                                              "Actual hours worked, Manufacturing",
+                                                                              "Actual hours worked, Services-producing sector",
+                                                                              "Actual hours worked, Wholesale and retail trade",
+                                                                              "Actual hours worked, Transportation and warehousing",
+                                                                              "Actual hours worked, Finance, insurance, real estate, rental and leasing",
+                                                                              "Actual hours worked, Professional, scientific and technical services",
+                                                                              "Actual hours worked, Business, building and other support services",
+                                                                              "Actual hours worked, Educational services",
+                                                                              "Actual hours worked, Health care and social assistance",
+                                                                              "Actual hours worked, Information, culture and recreation",
+                                                                              "Actual hours worked, Accommodation and food services",
+                                                                              "Actual hours worked, Other services (except public administration)",
+                                                                              "Actual hours worked, Public administration")
                                ),
                              selected = "Number employed (x1,000)"
                  ),
@@ -499,14 +519,26 @@ server <- function(input, output, session) {
     
     # update select menus in years plot
     updateCheckboxGroupInput(session, "empBySex",
-                      label = "Select sex:",
+                      label = NULL,
                       choices = "Both sexes",
                       selected = NULL)
     
     updateCheckboxGroupInput(session, "empByAge",
-                      label = "Select age group:",
+                      label = NULL,
                       choices = "15 years and over",
                       selected = NULL)
+    
+    if (sub(",.*", "", stat) == "Actual hours worked") {
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = "Canada",
+                        selected = "Canada")
+      
+      updateCheckboxGroupInput(session, "empByGeo",
+                               label = NULL,
+                               choices = "Canada")
+    }
+    
     }
     
     else {
@@ -521,12 +553,12 @@ server <- function(input, output, session) {
                         selected = input$empAge)
       
       updateCheckboxGroupInput(session, "empBySex",
-                               label = "Select sex:",
+                               label = NULL,
                                choices = c("Both sexes", "Males", "Females"),
                                selected = input$empBySex)
       
       updateCheckboxGroupInput(session, "empByAge",
-                               label = "Select age group:",
+                               label = NULL,
                                choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
                                selected = input$empByAge)
       

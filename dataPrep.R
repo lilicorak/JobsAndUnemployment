@@ -9,7 +9,7 @@ require(tidyr)
 
 # unemployment data
 # seasonally adjusted unemployment data
-adjUnemp <- subset(get_cansim("14-10-0287"),
+adjUnemp <- subset(get_cansim("14-10-0287", refresh = TRUE),
                     select=c(REF_DATE, GEO, `Labour force characteristics`, Sex, `Age group`, Statistics, `Data type`, VALUE),
                     `Labour force characteristics` %in% c("Unemployment", "Unemployment rate") &
                       Statistics == "Estimate" &
@@ -27,7 +27,7 @@ adjUnemp <- subset(adjUnemp, select=-c(REF_DATE, `Labour force characteristics`,
 
 
 # non-seasonally adjusted supplementary unemployment rates
-suppUnemp <- subset(get_cansim("14-10-0077"),
+suppUnemp <- subset(get_cansim("14-10-0077", refresh = TRUE),
                         select=c(REF_DATE, GEO, `Supplementary unemployment rates`, Sex, `Age group`, VALUE),
                         `Supplementary unemployment rates` %in% c("R4 - official rate", 
                                                                 "R8 - plus discouraged searchers, waiting group, portion of involuntary part-timers") &
@@ -45,7 +45,7 @@ suppUnemp <- subset(suppUnemp, select=-c(REF_DATE, `Supplementary unemployment r
 
 
 # unemployment by reason for leaving job
-reasonUnemp <- subset(get_cansim("14-10-0125"),
+reasonUnemp <- subset(get_cansim("14-10-0125", refresh = TRUE),
                       select=c(REF_DATE, GEO, Reason, Characteristics, Sex, `Age group`, VALUE),
                       Reason != "Have not worked in the last year" &
                       Reason != "Never worked" &
@@ -54,14 +54,14 @@ reasonUnemp <- subset(get_cansim("14-10-0125"),
                       `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
                       as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
 
-reasonUnemp$Statistics <- reasonUnemp$Reason
+reasonUnemp$Statistics <- paste0("Number unemployed, ", reasonUnemp$Reason)
 
 reasonUnemp$refPeriod <- as.Date(paste0(reasonUnemp$REF_DATE,"-01"))
 
 reasonUnemp <- subset(reasonUnemp, select=-c(REF_DATE, Reason, Characteristics))
 
 # short unemployment estimate
-shortUnemp <- subset(get_cansim("14-10-0342"),
+shortUnemp <- subset(get_cansim("14-10-0342", refresh = TRUE),
                      select=c(REF_DATE, GEO, `Duration of unemployment`, Sex, `Age group`, Statistics, `Data type`, VALUE),
                      `Duration of unemployment` == "1 to 4 weeks" &
                      Statistics == "Estimate" &
@@ -92,7 +92,7 @@ write.csv(unempDataWide, file="data/unempFinalDataWide.csv",na="",row.names = F)
 
 # number and rate employed
 # 14100287
-adjEmp <- subset(get_cansim("14-10-0287"),
+adjEmp <- subset(get_cansim("14-10-0287", refresh = TRUE),
                  select=c(REF_DATE, GEO, `Labour force characteristics`, Sex, `Age group`, Statistics, `Data type`, VALUE),
                  `Labour force characteristics` %in% c("Employment", "Employment rate") &
                    Statistics == "Estimate" &
@@ -110,8 +110,7 @@ adjEmp <- subset(adjEmp, select=-c(REF_DATE, `Labour force characteristics`, `Da
 
 
 # number employed 1 to 3 months
-# 14100050
-shortEmp <- subset(get_cansim("14-10-0050"),
+shortEmp <- subset(get_cansim("14-10-0050", refresh = TRUE),
                  select=c(REF_DATE, GEO, `Job tenure`, Sex, `Age group`, `Type of work`, VALUE),
                  `Job tenure` == "1 to 3 months" &
                    `Type of work` == "Both full and part-time employment" &
@@ -126,14 +125,13 @@ shortEmp$refPeriod <- as.Date(paste0(shortEmp$REF_DATE,"-01"))
 shortEmp <- subset(shortEmp, select=-c(REF_DATE, `Job tenure`, `Type of work`))
 
 # employment data by NAICS
-naicsEmp <- subset(get_cansim("14-10-0355"),
+naicsEmp <- subset(get_cansim("14-10-0355", refresh = TRUE),
                    select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Data type`, `Statistics`, VALUE),
                    `Data type` == "Seasonally adjusted" &
                      `Statistics` == "Estimate" &
-                     `North American Industry Classification System (NAICS)` != "Total employed, all industries" &
                       as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
 
-naicsEmp$Statistics <- naicsEmp$`North American Industry Classification System (NAICS)`
+naicsEmp$Statistics <- paste0("Number employed, ", gsub(" \\[.*", "", naicsEmp$`North American Industry Classification System (NAICS)`))
 
 naicsEmp$refPeriod <- as.Date(paste0(naicsEmp$REF_DATE,"-01"))
 
@@ -143,9 +141,24 @@ naicsEmp$`Age group` <- "15 years and over"
 
 naicsEmp <- subset(naicsEmp, select=-c(REF_DATE, `North American Industry Classification System (NAICS)`, `Data type`))
 
+# actual hours worked by NAICS
+hoursEmp <- subset(get_cansim("14-10-0289", refresh = TRUE),
+                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Statistics`, VALUE),
+                   `Statistics` == "Estimate" &
+                     as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+
+hoursEmp$Statistics <- paste0("Actual hours worked, ", gsub(" \\[.*", "", hoursEmp$`North American Industry Classification System (NAICS)`))
+
+hoursEmp$refPeriod <- as.Date(paste0(hoursEmp$REF_DATE,"-01"))
+
+hoursEmp$Sex <- "Both sexes"
+
+hoursEmp$`Age group` <- "15 years and over"
+
+hoursEmp <- subset(hoursEmp, select=-c(REF_DATE, `North American Industry Classification System (NAICS)`))
 
 # export final employment data file
-empData <- rbind(adjEmp, shortEmp, naicsEmp)
+empData <- rbind(adjEmp, shortEmp, naicsEmp, hoursEmp)
 
 empDataWide <- spread(empData, key=Statistics, value=VALUE)
 
