@@ -126,9 +126,9 @@ shortEmp <- subset(shortEmp, select=-c(REF_DATE, `Job tenure`, `Type of work`))
 
 # employment data by NAICS
 naicsEmp <- subset(get_cansim("14-10-0355", refresh = TRUE),
-                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Data type`, `Statistics`, VALUE),
+                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Data type`, Statistics, VALUE),
                    `Data type` == "Seasonally adjusted" &
-                     `Statistics` == "Estimate" &
+                     Statistics == "Estimate" &
                       as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
 
 naicsEmp$Statistics <- paste0("Number employed, ", gsub(" \\[.*", "", naicsEmp$`North American Industry Classification System (NAICS)`))
@@ -143,8 +143,8 @@ naicsEmp <- subset(naicsEmp, select=-c(REF_DATE, `North American Industry Classi
 
 # actual hours worked by NAICS
 hoursEmp <- subset(get_cansim("14-10-0289", refresh = TRUE),
-                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Statistics`, VALUE),
-                   `Statistics` == "Estimate" &
+                   select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, Statistics, VALUE),
+                   Statistics == "Estimate" &
                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
 
 hoursEmp$Statistics <- paste0("Actual hours worked, ", gsub(" \\[.*", "", hoursEmp$`North American Industry Classification System (NAICS)`))
@@ -157,8 +157,27 @@ hoursEmp$`Age group` <- "15 years and over"
 
 hoursEmp <- subset(hoursEmp, select=-c(REF_DATE, `North American Industry Classification System (NAICS)`))
 
+# Number employed in major CMAs by CMA
+cmaEmp <- subset(get_cansim("14-10-0295", refresh = TRUE),
+                 select=c(REF_DATE, GEO, `Labour force characteristics`, Statistics, `Data type`, VALUE),
+                 Statistics == "Estimate" &
+                   `Labour force characteristics` == "Employment" &
+                   `Data type` == "Seasonally adjusted" &
+                   as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+
+cmaEmp$Statistics <- revalue(cmaEmp$`Labour force characteristics`,
+                             c("Employment" = "Number employed (x1,000)"))
+
+cmaEmp$refPeriod <- as.Date(paste0(cmaEmp$REF_DATE,"-01"))
+
+cmaEmp$Sex <- "Both sexes"
+
+cmaEmp$`Age group` <- "15 years and over"
+
+cmaEmp <- subset(cmaEmp, select=-c(REF_DATE, `Labour force characteristics`, `Data type`))
+
 # export final employment data file
-empData <- rbind(adjEmp, shortEmp, naicsEmp, hoursEmp)
+empData <- rbind(adjEmp, shortEmp, naicsEmp, hoursEmp, cmaEmp)
 
 empDataWide <- spread(empData, key=Statistics, value=VALUE)
 
