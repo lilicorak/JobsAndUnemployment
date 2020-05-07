@@ -29,7 +29,7 @@ unempData$refPeriod <- as.Date(unempData$refPeriod)
 
 # read in employment data
 empData <- fread("data/empFinalDataWide.csv", sep=",", check.names = FALSE, data.table = FALSE)
-empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
+empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "Montréal, Quebec", "ON", "Toronto, Ontario", "MB", "SK", "AB", "BC", "Vancouver, British Columbia"))
 empData$"Age group" <- factor(empData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 empData$Sex <- factor(empData$Sex, levels = c("Both sexes", "Males", "Females"))
 empData$refPeriod <- as.Date(empData$refPeriod)
@@ -239,8 +239,8 @@ ui <- fluidPage(
                  selectInput("empGeo",
                              label = "Select geography:",
                              choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
-                                         "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB","Saskatchewan" = "SK","Alberta" = "AB",
-                                         "British Columbia" = "BC"),
+                                         "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                         "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
                              selected = "Canada"
                  ),
                  selectInput("empAge",
@@ -276,8 +276,8 @@ ui <- fluidPage(
                            "empByGeo",
                            label = NULL,
                            choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
-                                       "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB","Saskatchewan" = "SK","Alberta" = "AB",
-                                       "British Columbia" = "BC")
+                                       "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                       "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
                          )
                        )
                      ),
@@ -500,35 +500,82 @@ server <- function(input, output, session) {
   ### employment drop down menus
   observe({
     stat <- input$empStatistic
+    geo <- input$empGeo
+    byGeo <- input$empByGeo
     
-    # Can use character(0) to remove all choices
-    if (!(stat %in% c("Number employed (x1,000)", 
-                      "Employment rate, seasonally adjusted",
-                      "Number employed three months or less (x1,000)"))) {
+    # control age drop downs
+    if (!(stat %in% c("Number employed (x1,000)", "Employment rate, seasonally adjusted", "Number employed three months or less (x1,000)")) ||
+        geo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia") ||
+        (!is.null(byGeo) && (byGeo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia")))) {
+      # update sidebar drop down
+      updateSelectInput(session, "empAge",
+                        label = "Select age group:",
+                        choices = "15 years and over",
+                        selected = "15 years and over")
+      
+      # update select menu in years plot
+      updateCheckboxGroupInput(session, "empByAge",
+                               label = NULL,
+                               choices = "15 years and over",
+                               selected = input$empByAge)
+    }
+    else {
+      updateSelectInput(session, "empAge",
+                        label = "Select age group:",
+                        choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
+                        selected = input$empAge)
+      
+      updateCheckboxGroupInput(session, "empByAge",
+                               label = NULL,
+                               choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
+                               selected = input$empByAge)
+    }
     
-    # update select menus in side bar
-    updateSelectInput(session, "empSex",
-                      label = "Select sex:",
-                      choices = "Both sexes",
-                      selected = "Both sexes")
+    # control sex drop downs
+    if (!(stat %in% c("Number employed (x1,000)", "Employment rate, seasonally adjusted", "Number employed three months or less (x1,000)")) ||
+        geo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia") ||
+        (!is.null(byGeo) && (byGeo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia")))) {
+      # update sidebar drop down
+      updateSelectInput(session, "empSex",
+                        label = "Select sex:",
+                        choices = "Both sexes",
+                        selected = "Both sexes")
+      
+      # update select menu in years plot
+      updateCheckboxGroupInput(session, "empBySex",
+                               label = NULL,
+                               choices = "Both sexes",
+                               selected = input$empBySex)
+    }
+    else {
+      updateSelectInput(session, "empSex",
+                        label = "Select sex:",
+                        choices = c("Both sexes", "Males", "Females"),
+                        selected = input$empSex)
+      
+      updateCheckboxGroupInput(session, "empBySex",
+                               label = NULL,
+                               choices = c("Both sexes", "Males", "Females"),
+                               selected = input$empBySex)
+    }
     
-    updateSelectInput(session, "empAge",
-                      label = "Select age group:",
-                      choices = "15 years and over",
-                      selected = "15 years and over")
-    
-    # update select menus in years plot
-    updateCheckboxGroupInput(session, "empBySex",
-                      label = NULL,
-                      choices = "Both sexes",
-                      selected = NULL)
-    
-    updateCheckboxGroupInput(session, "empByAge",
-                      label = NULL,
-                      choices = "15 years and over",
-                      selected = NULL)
-    
-    if (sub(",.*", "", stat) == "Actual hours worked") {
+    # control geo drop downs
+    if (stat == "Number employed (x1,000)") {
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                    "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                    "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
+                        selected = input$empGeo)
+      
+      updateCheckboxGroupInput(session, "empByGeo",
+                               label = NULL,
+                               choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                           "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                           "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
+                               selected = input$empByGeo)
+    }
+    else if (sub(",.*", "", stat) == "Actual hours worked") {
       updateSelectInput(session, "empGeo",
                         label = "Select geography:",
                         choices = "Canada",
@@ -536,32 +583,23 @@ server <- function(input, output, session) {
       
       updateCheckboxGroupInput(session, "empByGeo",
                                label = NULL,
-                               choices = "Canada")
+                               choices = "Canada",
+                               selected = input$empByGeo)
     }
-    
-    }
-    
     else {
-      updateSelectInput(session, "empSex",
-                        label = "Select sex:",
-                        choices = c("Both sexes", "Males", "Females"),
-                        selected = input$empSex)
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                    "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB",
+                                    "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC"),
+                        selected = input$empGeo)
       
-      updateSelectInput(session, "empAge",
-                        label = "Select age group:",
-                        choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                        selected = input$empAge)
-      
-      updateCheckboxGroupInput(session, "empBySex",
+      updateCheckboxGroupInput(session, "empByGeo",
                                label = NULL,
-                               choices = c("Both sexes", "Males", "Females"),
-                               selected = input$empBySex)
-      
-      updateCheckboxGroupInput(session, "empByAge",
-                               label = NULL,
-                               choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                               selected = input$empByAge)
-      
+                               choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                           "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB",
+                                           "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC"),
+                               selected = input$empByGeo)
     }
   })
   
