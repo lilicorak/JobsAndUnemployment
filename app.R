@@ -73,7 +73,7 @@ ui <- fluidPage(
                              label = "Select reference period:",
                              min = min(unempData$refPeriod),
                              max = max(unempData$refPeriod),
-                             value = c(as.Date("2000-01-01"), max(unempData$refPeriod)),
+                             value = c(min(unempData$refPeriod), max(unempData$refPeriod)),
                              timeFormat = "%b %Y"
                  ),
                  selectInput("unempGeo",
@@ -233,7 +233,7 @@ ui <- fluidPage(
                              label = "Select reference period:",
                              min = min(empData$refPeriod),
                              max = max(empData$refPeriod),
-                             value = c(as.Date("2000-01-01"), max(empData$refPeriod)),
+                             value = c(min(empData$refPeriod), max(empData$refPeriod)),
                              timeFormat = "%b %Y"
                  ),
                  selectInput("empGeo",

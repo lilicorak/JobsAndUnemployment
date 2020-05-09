@@ -15,7 +15,7 @@ adjUnemp <- subset(get_cansim("14-10-0287", refresh = TRUE),
                       Statistics == "Estimate" &
                       `Data type` == "Seasonally adjusted" &
                       `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                        as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                        as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 adjUnemp$Statistics <- revalue(adjUnemp$`Labour force characteristics`,
                                c("Unemployment" = "Number unemployed (x1,000)", 
@@ -32,7 +32,7 @@ suppUnemp <- subset(get_cansim("14-10-0077", refresh = TRUE),
                         `Supplementary unemployment rates` %in% c("R4 - official rate", 
                                                                 "R8 - plus discouraged searchers, waiting group, portion of involuntary part-timers") &
                           `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                          as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                          as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 suppUnemp$Statistics <- revalue(suppUnemp$`Supplementary unemployment rates`, 
                                             c("R4 - official rate" = "Official unemployment rate, not seasonally adjusted",
@@ -52,7 +52,7 @@ reasonUnemp <- subset(get_cansim("14-10-0125", refresh = TRUE),
                       Reason != "Total, all reasons" &
                       Characteristics == "Unemployed" &
                       `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 reasonUnemp$Statistics <- paste0("Number unemployed, ", reasonUnemp$Reason)
 
@@ -67,7 +67,7 @@ shortUnemp <- subset(get_cansim("14-10-0342", refresh = TRUE),
                      Statistics == "Estimate" &
                      `Data type` == "Seasonally adjusted" &
                      `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 shortUnemp$Statistics <- "Number unemployed one month or less (x1,000)"
 
@@ -98,7 +98,7 @@ adjEmp <- subset(get_cansim("14-10-0287", refresh = TRUE),
                    Statistics == "Estimate" &
                    `Data type` == "Seasonally adjusted" &
                    `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                    as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                    as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 adjEmp$Statistics <- revalue(adjEmp$`Labour force characteristics`,
                                c("Employment" = "Number employed (x1,000)", 
@@ -115,7 +115,7 @@ shortEmp <- subset(get_cansim("14-10-0050", refresh = TRUE),
                  `Job tenure` == "1 to 3 months" &
                    `Type of work` == "Both full and part-time employment" &
                    `Age group` %in% c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over") &
-                    as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                    as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 shortEmp$Statistics <- revalue(shortEmp$`Job tenure`,
                              c("1 to 3 months" = "Number employed three months or less (x1,000)"))
@@ -129,7 +129,7 @@ naicsEmp <- subset(get_cansim("14-10-0355", refresh = TRUE),
                    select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, `Data type`, Statistics, VALUE),
                    `Data type` == "Seasonally adjusted" &
                      Statistics == "Estimate" &
-                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                      as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 naicsEmp$Statistics <- paste0("Number employed, ", gsub(" \\[.*", "", naicsEmp$`North American Industry Classification System (NAICS)`))
 
@@ -145,7 +145,7 @@ naicsEmp <- subset(naicsEmp, select=-c(REF_DATE, `North American Industry Classi
 hoursEmp <- subset(get_cansim("14-10-0289", refresh = TRUE),
                    select=c(REF_DATE, GEO, `North American Industry Classification System (NAICS)`, Statistics, VALUE),
                    Statistics == "Estimate" &
-                     as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                     as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 hoursEmp$Statistics <- paste0("Actual hours worked, ", gsub(" \\[.*", "", hoursEmp$`North American Industry Classification System (NAICS)`))
 
@@ -163,7 +163,7 @@ cmaEmp <- subset(get_cansim("14-10-0295", refresh = TRUE),
                  Statistics == "Estimate" &
                    `Labour force characteristics` == "Employment" &
                    `Data type` == "Seasonally adjusted" &
-                   as.Date(paste0(REF_DATE,"-01")) >= as.Date("2000-01-01"))
+                   as.Date(paste0(REF_DATE,"-01")) >= as.Date("1976-01-01"))
 
 cmaEmp$Statistics <- revalue(cmaEmp$`Labour force characteristics`,
                              c("Employment" = "Number employed (x1,000)"))
