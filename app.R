@@ -1,5 +1,8 @@
+
+# use wide data files
+
 # install.packages(c("rsconnect", "shiny", "ggplot2", "scales", "shinythemes", "tidyverse",
-# "shinyWidgets", "ggrepel", "itertools", "ggiraph", "maps", "ggsci", "mapcan", "rapport"))
+# "shinyWidgets", "ggrepel", "itertools", "ggiraph", "maps", "ggsci", "mapcan", "rapport", "data.table"))
 
 require(rsconnect)
 require(shiny)
@@ -15,19 +18,19 @@ require(maps)
 require(ggsci)
 require(mapcan)
 require(rapport)
-
+require(data.table)
 
 # read in unemployment data
-unempData <- read.csv("data/unempFinalData.csv", head=T, sep=",")
+unempData <- fread("data/unempFinalDataWide.csv", sep=",", check.names = FALSE, data.table = FALSE)
 unempData$GEO <- factor(unempData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
-unempData$Age.group <- factor(unempData$Age.group, levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
+unempData$"Age group" <- factor(unempData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 unempData$Sex <- factor(unempData$Sex, levels = c("Both sexes", "Males", "Females"))
 unempData$refPeriod <- as.Date(unempData$refPeriod)
 
 # read in employment data
-empData <- read.csv("data/empFinalData.csv", head=T, sep=",")
-empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC"))
-empData$Age.group <- factor(empData$Age.group, levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
+empData <- fread("data/empFinalDataWide.csv", sep=",", check.names = FALSE, data.table = FALSE)
+empData$GEO <- factor(empData$GEO, levels=c("Canada", "NL", "PE", "NS", "NB", "QC", "Montréal, Quebec", "ON", "Toronto, Ontario", "MB", "SK", "AB", "BC", "Vancouver, British Columbia"))
+empData$"Age group" <- factor(empData$"Age group", levels=c("15 years and over","15 to 24 years","25 to 54 years","55 years and over"))
 empData$Sex <- factor(empData$Sex, levels = c("Both sexes", "Males", "Females"))
 empData$refPeriod <- as.Date(empData$refPeriod)
 
@@ -54,23 +57,23 @@ ui <- fluidPage(
                                "Official unemployment rate, not seasonally adjusted",
                                "Comprehensive unemployment rate, not seasonally adjusted",
                                "Number unemployed one month or less (x1,000)",
-                               "Number unemployed by reason (x1,000)" = c("Job leavers",
-                                                                          "Own illness or disability",
-                                                                          "Personal or family reasons",
-                                                                          "Going to school",
-                                                                          "Dissatisfied",
-                                                                          "Retired",
-                                                                          "Other reasons",
-                                                                          "Jobs losers",
-                                                                          "Permanent layoff",
-                                                                          "Temporary layoff")),
+                               "Number unemployed by reason (x1,000)" = c("Number unemployed, Job leavers",
+                                                                          "Number unemployed, Own illness or disability",
+                                                                          "Number unemployed, Personal or family reasons",
+                                                                          "Number unemployed, Going to school",
+                                                                          "Number unemployed, Dissatisfied",
+                                                                          "Number unemployed, Retired",
+                                                                          "Number unemployed, Other reasons",
+                                                                          "Number unemployed, Jobs losers",
+                                                                          "Number unemployed, Permanent layoff",
+                                                                          "Number unemployed, Temporary layoff")),
                              selected = "Number unemployed (x1,000)"
                  ),
                  sliderInput("unempRefPeriod",
                              label = "Select reference period:",
                              min = min(unempData$refPeriod),
                              max = max(unempData$refPeriod),
-                             value = c(as.Date("2000-01-01"), max(unempData$refPeriod)),
+                             value = c(min(unempData$refPeriod), max(unempData$refPeriod)),
                              timeFormat = "%b %Y"
                  ),
                  selectInput("unempGeo",
@@ -185,24 +188,44 @@ ui <- fluidPage(
                                "Number employed (x1,000)",
                                "Employment rate, seasonally adjusted",
                                "Number employed three months or less (x1,000)",
-                               "Number employed by industry (x1,000)" = c("Goods-producing sector",
-                                                                          "Agriculture [111-112, 1100, 1151-1152]",
-                                                                          "Forestry, fishing, mining, quarrying, oil and gas [21, 113-114, 1153, 2100]",
-                                                                          "Utilities [22]",
-                                                                          "Construction [23]",
-                                                                          "Manufacturing [31-33]",
-                                                                          "Services-producing sector",
-                                                                          "Wholesale and retail trade [41, 44-45]",
-                                                                          "Transportation and warehousing [48-49]",
-                                                                          "Finance, insurance, real estate, rental and leasing [52-53]",
-                                                                          "Professional, scientific and technical services [54]",
-                                                                          "Business, building and other support services [55-56]",
-                                                                          "Educational services [61]",
-                                                                          "Health care and social assistance [62]",
-                                                                          "Information, culture and recreation [51, 71]",
-                                                                          "Accommodation and food services [72]",
-                                                                          "Other services (except public administration) [81]",
-                                                                          "Public administration [91]")
+                               "Number employed by industry (x1,000)" = c("Number employed, Total employed, all industries",
+                                                                          "Number employed, Goods-producing sector",
+                                                                          "Number employed, Agriculture",
+                                                                          "Number employed, Forestry, fishing, mining, quarrying, oil and gas",
+                                                                          "Number employed, Utilities",
+                                                                          "Number employed, Construction",
+                                                                          "Number employed, Manufacturing",
+                                                                          "Number employed, Services-producing sector",
+                                                                          "Number employed, Wholesale and retail trade",
+                                                                          "Number employed, Transportation and warehousing",
+                                                                          "Number employed, Finance, insurance, real estate, rental and leasing",
+                                                                          "Number employed, Professional, scientific and technical services",
+                                                                          "Number employed, Business, building and other support services",
+                                                                          "Number employed, Educational services",
+                                                                          "Number employed, Health care and social assistance",
+                                                                          "Number employed, Information, culture and recreation",
+                                                                          "Number employed, Accommodation and food services",
+                                                                          "Number employed, Other services (except public administration)",
+                                                                          "Number employed, Public administration"),
+                               "Actual hours worked at main job (x1,000)" = c("Actual hours worked, Total actual hours worked, all industries",
+                                                                              "Actual hours worked, Goods-producing sector",
+                                                                              "Actual hours worked, Agriculture",
+                                                                              "Actual hours worked, Forestry, fishing, mining, quarrying, oil and gas",
+                                                                              "Actual hours worked, Utilities",
+                                                                              "Actual hours worked, Construction",
+                                                                              "Actual hours worked, Manufacturing",
+                                                                              "Actual hours worked, Services-producing sector",
+                                                                              "Actual hours worked, Wholesale and retail trade",
+                                                                              "Actual hours worked, Transportation and warehousing",
+                                                                              "Actual hours worked, Finance, insurance, real estate, rental and leasing",
+                                                                              "Actual hours worked, Professional, scientific and technical services",
+                                                                              "Actual hours worked, Business, building and other support services",
+                                                                              "Actual hours worked, Educational services",
+                                                                              "Actual hours worked, Health care and social assistance",
+                                                                              "Actual hours worked, Information, culture and recreation",
+                                                                              "Actual hours worked, Accommodation and food services",
+                                                                              "Actual hours worked, Other services (except public administration)",
+                                                                              "Actual hours worked, Public administration")
                                ),
                              selected = "Number employed (x1,000)"
                  ),
@@ -210,14 +233,14 @@ ui <- fluidPage(
                              label = "Select reference period:",
                              min = min(empData$refPeriod),
                              max = max(empData$refPeriod),
-                             value = c(as.Date("2000-01-01"), max(empData$refPeriod)),
+                             value = c(min(empData$refPeriod), max(empData$refPeriod)),
                              timeFormat = "%b %Y"
                  ),
                  selectInput("empGeo",
                              label = "Select geography:",
                              choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
-                                         "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB","Saskatchewan" = "SK","Alberta" = "AB",
-                                         "British Columbia" = "BC"),
+                                         "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                         "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
                              selected = "Canada"
                  ),
                  selectInput("empAge",
@@ -253,8 +276,8 @@ ui <- fluidPage(
                            "empByGeo",
                            label = NULL,
                            choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
-                                       "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB","Saskatchewan" = "SK","Alberta" = "AB",
-                                       "British Columbia" = "BC")
+                                       "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                       "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
                          )
                        )
                      ),
@@ -326,11 +349,11 @@ server <- function(input, output, session) {
   ### unemployment plots
   output$unempMap <- renderGirafe({
     input$updateUnemp
-    isolate({unempMapData <- subset(unempData, Statistics == input$unempStatistic  &
-                                substr(refPeriod,0,7) == substr(input$unempRefPeriod[2],0,7) &
-                                Sex == input$unempSex &
-                                Age.group == input$unempAge &
-                                GEO != "Canada")
+    isolate({unempMapData <- subset(unempData,
+                                    substr(refPeriod,0,7) == substr(input$unempRefPeriod[2],0,7) &
+                                      Sex == input$unempSex &
+                                      `Age group` == input$unempAge &
+                                      GEO != "Canada")
     
     unempMapData$GEO <- as.character(unempMapData$GEO)
     
@@ -341,13 +364,13 @@ server <- function(input, output, session) {
     unempMapPlot <- ggplot() +
       geom_polygon_interactive(data=unempMapData, 
                                aes(x = long, y = lat, group = group, 
-                                   fill=VALUE, tooltip=paste(pr_alpha, VALUE))) +
+                                   fill=unlist(unempMapData[input$unempStatistic]), tooltip=paste(pr_alpha, unlist(unempMapData[input$unempStatistic])))) +
       coord_fixed() +
       theme(legend.position = "bottom", axis.title = element_blank(),
             axis.text = element_blank(), axis.ticks = element_blank(), panel.spacing = element_blank(),
             legend.box.spacing = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
             text=element_text(family="Roboto")) +
-      scale_fill_material("blue", name=paste(strwrap(paste(input$unempStatistic),width=25), collapse="\n")) +
+      scale_fill_material("blue", name=paste(strwrap(paste(input$unempStatistic),width=25), collapse="\n"), n.breaks=4) +
       labs(title= paste(strwrap(paste0(input$unempStatistic,", ",format(input$unempRefPeriod[2], "%b %Y")), 
                                        width = 45), collapse = "\n"))
     
@@ -358,17 +381,15 @@ server <- function(input, output, session) {
   output$unempYears <- renderGirafe({
     (input$updateUnemp | input$updateYearsUnemp)
     isolate({if (is.null(input$unempByGeo) & is.null(input$unempByAge) & is.null(input$unempBySex)) 
-      unempYearsData <- subset(unempData, Statistics == input$unempStatistic &
-                                  substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
+      unempYearsData <- subset(unempData, substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
                                   substr(refPeriod,0,7) <= substr(input$unempRefPeriod[2],0,7) &
-                                  Age.group == input$unempAge &
+                                 `Age group` == input$unempAge &
                                   Sex == input$unempSex &
                                   GEO == input$unempGeo)
-    else unempYearsData <- subset(unempData, Statistics == input$unempStatistic &
-                                    substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
+    else unempYearsData <- subset(unempData, substr(refPeriod,0,7) >= substr(input$unempRefPeriod[1],0,7) &
                                     substr(refPeriod,0,7) <= substr(input$unempRefPeriod[2],0,7) &
-                                     {if (is.null(input$unempByAge)) Age.group == input$unempAge
-                                       else Age.group %in% input$unempByAge} &
+                                     {if (is.null(input$unempByAge)) `Age group` == input$unempAge
+                                       else `Age group` %in% input$unempByAge} &
                                        {if (is.null(input$unempBySex)) Sex == input$unempSex
                                          else Sex %in% input$unempBySex} &
                                          {if (is.null(input$unempByGeo)) GEO == input$unempGeo
@@ -379,16 +400,16 @@ server <- function(input, output, session) {
                     !is.null(input$unempByAge),
                     !is.null(input$unempBySex))
     
-    byVars <- c("GEO", "Age.group", "Sex")
+    byVars <- c("GEO", "Age group", "Sex")
     
     byVars <- byVars[unlist(byVarsBool)]
     
     unempYearsPlot <- ggplot(unempYearsData) + 
-                        {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=VALUE, colour=interaction(unempYearsData[,byVars], drop=T, sep=", ")), size=1) 
-                          else geom_line(aes(x=refPeriod, y=VALUE, colour=Statistics), size=1)} +
-                        {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE),
+                        {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), colour=interaction(unempYearsData[,byVars], drop=T, sep=", ")), size=1) 
+                          else geom_line(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), colour=GEO), size=1)} +
+                        {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(unempYearsData[input$unempStatistic])),
                                                                                         colour=interaction(unempYearsData[,byVars] ,drop=T, sep=", ")), size = 1.25)
-                          else geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE), colour=Statistics), size = 1.25)} +
+                          else geom_point_interactive(aes(x=refPeriod, y=unlist(unempYearsData[input$unempStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(unempYearsData[input$unempStatistic])), colour=GEO), size = 1.25)} +
                         theme_classic() + scale_y_continuous(labels = comma) +
                         {if (!rapportools::is.empty(byVars)) guides(colour = "legend") else guides(colour=F)} +
                         scale_colour_jco() +
@@ -416,17 +437,17 @@ server <- function(input, output, session) {
     return(subset(unempData,
                   GEO == input$unempGeo &
                     Sex != "Both sexes" &
-                    Age.group == input$unempAge &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))
+                    `Age group` == input$unempAge &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
     })
   
   output$unempSexPlot <- renderGirafe({
     input$updateUnemp
     isolate({unempSexPlot <- ggplot(unempSexData()) + 
-                      geom_col_interactive(aes(x=Sex, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position="dodge") + 
+                      geom_col_interactive(aes(x=Sex, y=unlist(unempSexData()[input$unempStatistic]), alpha = highlight, 
+                                               fill=month, tooltip=unlist(unempSexData()[input$unempStatistic])), position="dodge") + 
                       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-                      scale_alpha(range = c(max(0.45, min(unempSexData()$highlight)),1)) +
+                      scale_alpha(range = c(max(0.45, min(unempSexData()$highlight)),1)) + scale_y_continuous(labels = comma) +
                       guides(alpha = FALSE) +
                       labs(y=paste(strwrap(paste(input$unempStatistic),width=35), collapse="\n"), 
                            x="Sex",
@@ -438,7 +459,7 @@ server <- function(input, output, session) {
   })
   
   unempAgeData <- reactive ({
-    unempData$highlight <- ifelse((unempData$Age.group == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
+    unempData$highlight <- ifelse((unempData$`Age group` == input$unempAge), 1, ifelse((input$unempAge == "15 years and over"),1,0))
     
     thismonth <- input$unempRefPeriod[2]
     lastmonth <- seq(input$unempRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -452,17 +473,17 @@ server <- function(input, output, session) {
     return(subset(unempData,
                   GEO == input$unempGeo &
                     Sex == input$unempSex &
-                    Age.group != "15 years and over" &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$unempStatistic))
+                    `Age group` != "15 years and over" &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
     })
   
   output$unempAgePlot <- renderGirafe({
     input$updateUnemp
     isolate({unempAgePlot <- ggplot(unempAgeData()) + 
-                geom_col_interactive(aes(x=Age.group, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position = "dodge") + 
-                theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-                scale_alpha(range = c(max(0.45, min(unempAgeData()$highlight)),1)) +
+                geom_col_interactive(aes(x=`Age group`, y=unlist(unempAgeData()[input$unempStatistic]), alpha = highlight, 
+                                         fill=month, tooltip=unlist(unempAgeData()[input$unempStatistic])), position = "dodge") + 
+                theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") + 
+                scale_alpha(range = c(max(0.45, min(unempAgeData()$highlight)),1)) + scale_y_continuous(labels = comma) +
                 guides(alpha = FALSE) +
                 labs(y=paste(strwrap(paste(input$unempStatistic),width=35), collapse="\n"), 
                      x="Age group", 
@@ -479,66 +500,115 @@ server <- function(input, output, session) {
   ### employment drop down menus
   observe({
     stat <- input$empStatistic
+    geo <- input$empGeo
+    byGeo <- input$empByGeo
     
-    # Can use character(0) to remove all choices
-    if (!(stat %in% c("Number employed (x1,000)", 
-                      "Employment rate, seasonally adjusted",
-                      "Number employed three months or less (x1,000)"))) {
-    
-    # update select menus in side bar
-    updateSelectInput(session, "empSex",
-                      label = "Select sex:",
-                      choices = "Both sexes",
-                      selected = "Both sexes")
-    
-    updateSelectInput(session, "empAge",
-                      label = "Select age group:",
-                      choices = "15 years and over",
-                      selected = "15 years and over")
-    
-    # update select menus in years plot
-    updateCheckboxGroupInput(session, "empBySex",
-                      label = "Select sex:",
-                      choices = "Both sexes",
-                      selected = NULL)
-    
-    updateCheckboxGroupInput(session, "empByAge",
-                      label = "Select age group:",
-                      choices = "15 years and over",
-                      selected = NULL)
+    # control age drop downs
+    if (!(stat %in% c("Number employed (x1,000)", "Employment rate, seasonally adjusted", "Number employed three months or less (x1,000)")) ||
+        geo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia") ||
+        (!is.null(byGeo) && (byGeo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia")))) {
+      # update sidebar drop down
+      updateSelectInput(session, "empAge",
+                        label = "Select age group:",
+                        choices = "15 years and over",
+                        selected = "15 years and over")
+      
+      # update select menu in years plot
+      updateCheckboxGroupInput(session, "empByAge",
+                               label = NULL,
+                               choices = "15 years and over",
+                               selected = input$empByAge)
+    }
+    else {
+      updateSelectInput(session, "empAge",
+                        label = "Select age group:",
+                        choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
+                        selected = input$empAge)
+      
+      updateCheckboxGroupInput(session, "empByAge",
+                               label = NULL,
+                               choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
+                               selected = input$empByAge)
     }
     
+    # control sex drop downs
+    if (!(stat %in% c("Number employed (x1,000)", "Employment rate, seasonally adjusted", "Number employed three months or less (x1,000)")) ||
+        geo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia") ||
+        (!is.null(byGeo) && (byGeo %in% c("Montréal, Quebec", "Toronto, Ontario", "Vancouver, British Columbia")))) {
+      # update sidebar drop down
+      updateSelectInput(session, "empSex",
+                        label = "Select sex:",
+                        choices = "Both sexes",
+                        selected = "Both sexes")
+      
+      # update select menu in years plot
+      updateCheckboxGroupInput(session, "empBySex",
+                               label = NULL,
+                               choices = "Both sexes",
+                               selected = input$empBySex)
+    }
     else {
       updateSelectInput(session, "empSex",
                         label = "Select sex:",
                         choices = c("Both sexes", "Males", "Females"),
                         selected = input$empSex)
       
-      updateSelectInput(session, "empAge",
-                        label = "Select age group:",
-                        choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                        selected = input$empAge)
-      
       updateCheckboxGroupInput(session, "empBySex",
-                               label = "Select sex:",
+                               label = NULL,
                                choices = c("Both sexes", "Males", "Females"),
                                selected = input$empBySex)
+    }
+    
+    # control geo drop downs
+    if (stat == "Number employed (x1,000)") {
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                    "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                    "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
+                        selected = input$empGeo)
       
-      updateCheckboxGroupInput(session, "empByAge",
-                               label = "Select age group:",
-                               choices = c("15 years and over", "15 to 24 years", "25 to 54 years", "55 years and over"),
-                               selected = input$empByAge)
+      updateCheckboxGroupInput(session, "empByGeo",
+                               label = NULL,
+                               choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                           "New Brunswick" = "NB","Quebec" = "QC","Montréal, Quebec","Ontario" = "ON","Toronto, Ontario","Manitoba" = "MB",
+                                           "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC","Vancouver, British Columbia"),
+                               selected = input$empByGeo)
+    }
+    else if (sub(",.*", "", stat) == "Actual hours worked") {
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = "Canada",
+                        selected = "Canada")
       
+      updateCheckboxGroupInput(session, "empByGeo",
+                               label = NULL,
+                               choices = "Canada",
+                               selected = input$empByGeo)
+    }
+    else {
+      updateSelectInput(session, "empGeo",
+                        label = "Select geography:",
+                        choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                    "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB",
+                                    "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC"),
+                        selected = input$empGeo)
+      
+      updateCheckboxGroupInput(session, "empByGeo",
+                               label = NULL,
+                               choices = c("Canada" = "Canada","Newfoundland and Labrador" = "NL","Prince Edward Island" = "PE","Nova Scotia" = "NS",
+                                           "New Brunswick" = "NB","Quebec" = "QC","Ontario" = "ON","Manitoba" = "MB",
+                                           "Saskatchewan" = "SK","Alberta" = "AB","British Columbia" = "BC"),
+                               selected = input$empByGeo)
     }
   })
   
   ### employment plots
   output$empMap <- renderGirafe({
     input$updateEmp
-    isolate({empMapData <- subset(empData, Statistics == input$empStatistic  &
-                                      substr(refPeriod,0,7) == substr(input$empRefPeriod[2],0,7) &
+    isolate({empMapData <- subset(empData, substr(refPeriod,0,7) == substr(input$empRefPeriod[2],0,7) &
                                       Sex == input$empSex &
-                                      Age.group == input$empAge &
+                                      `Age group` == input$empAge &
                                       GEO != "Canada")
     
     empMapData$GEO <- as.character(empMapData$GEO)
@@ -550,13 +620,13 @@ server <- function(input, output, session) {
     empMapPlot <- ggplot() +
       geom_polygon_interactive(data=empMapData, 
                                aes(x = long, y = lat, group = group, 
-                                   fill=VALUE, tooltip=paste(pr_alpha, VALUE))) +
+                                   fill=unlist(empMapData[input$empStatistic]), tooltip=paste(pr_alpha, unlist(empMapData[input$empStatistic])))) +
       coord_fixed() +
       theme(legend.position = "bottom", axis.title = element_blank(),
             axis.text = element_blank(), axis.ticks = element_blank(), panel.spacing = element_blank(),
             legend.box.spacing = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
             text=element_text(family="Roboto")) +
-      scale_fill_material("blue", name=paste(strwrap(paste(input$empStatistic),width=25), collapse="\n")) +
+      scale_fill_material("blue", name=paste(strwrap(paste(input$empStatistic),width=25), collapse="\n"), n.breaks = 4) +
       labs(title= paste(strwrap(paste0(input$empStatistic,", ",format(input$empRefPeriod[2], "%b %Y")), 
                                 width = 45), collapse = "\n"))
     
@@ -568,17 +638,15 @@ server <- function(input, output, session) {
   output$empYears <- renderGirafe({
     (input$updateEmp | input$updateYearsEmp)
     isolate({if (is.null(input$empByGeo) & is.null(input$empByAge) & is.null(input$empBySex)) 
-      empYearsData <- subset(empData, Statistics == input$empStatistic &
-                                 substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
+      empYearsData <- subset(empData, substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
                                  substr(refPeriod,0,7) <= substr(input$empRefPeriod[2],0,7) &
-                                 Age.group == input$empAge &
+                                 `Age group` == input$empAge &
                                  Sex == input$empSex &
                                  GEO == input$empGeo)
-    else empYearsData <- subset(empData, Statistics == input$empStatistic &
-                                    substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
+    else empYearsData <- subset(empData, substr(refPeriod,0,7) >= substr(input$empRefPeriod[1],0,7) &
                                     substr(refPeriod,0,7) <= substr(input$empRefPeriod[2],0,7) &
-                                    {if (is.null(input$empByAge)) Age.group == input$empAge
-                                      else Age.group %in% input$empByAge} &
+                                    {if (is.null(input$empByAge)) `Age group` == input$empAge
+                                      else `Age group` %in% input$empByAge} &
                                       {if (is.null(input$empBySex)) Sex == input$empSex
                                         else Sex %in% input$empBySex} &
                                         {if (is.null(input$empByGeo)) GEO == input$empGeo
@@ -594,11 +662,11 @@ server <- function(input, output, session) {
     byVars <- byVars[unlist(byVarsBool)]
     
     empYearsPlot <- ggplot(empYearsData) + 
-    {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=VALUE, colour=interaction(empYearsData[,byVars], drop=T, sep=", ")), size=1) 
-      else geom_line(aes(x=refPeriod, y=VALUE, colour=Statistics), size=1)} +
-      {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE),
+    {if (!rapportools::is.empty(byVars[1])) geom_line(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), colour=interaction(empYearsData[,byVars], drop=T, sep=", ")), size=1) 
+      else geom_line(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), colour=GEO), size=1)} +
+      {if (!rapportools::is.empty(byVars[1])) geom_point_interactive(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(empYearsData[input$empStatistic])),
                                                                          colour=interaction(empYearsData[,byVars] ,drop=T, sep=", ")), size = 1.25)
-        else geom_point_interactive(aes(x=refPeriod, y=VALUE, tooltip=paste0(format(refPeriod, "%b %Y"), ": ", VALUE), colour=Statistics), size = 1.25)} +
+        else geom_point_interactive(aes(x=refPeriod, y=unlist(empYearsData[input$empStatistic]), tooltip=paste0(format(refPeriod, "%b %Y"), ": ", unlist(empYearsData[input$empStatistic])), colour=GEO), size = 1.25)} +
       theme_classic() + scale_y_continuous(labels = comma) +
       {if (!rapportools::is.empty(byVars)) guides(colour = "legend") else guides(colour=F)} +
       scale_colour_jco() +
@@ -627,17 +695,17 @@ server <- function(input, output, session) {
     return(subset(empData,
                   GEO == input$empGeo &
                     Sex != "Both sexes" &
-                    Age.group == input$empAge &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))
+                    `Age group` == input$empAge &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
   })
   
   output$empSexPlot <- renderGirafe({
     input$updateEmp
     isolate({empSexPlot <- ggplot(empSexData()) + 
-      geom_col_interactive(aes(x=Sex, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position="dodge") + 
+      geom_col_interactive(aes(x=Sex, y=unlist(empSexData()[input$empStatistic]), alpha = highlight, 
+                               fill=month, tooltip=unlist(empSexData()[input$empStatistic])), position="dodge") + 
       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-      scale_alpha(range = c(max(0.45, min(empSexData()$highlight)),1)) +
+      scale_alpha(range = c(max(0.45, min(empSexData()$highlight)),1)) + scale_y_continuous(labels = comma) +
       guides(alpha = FALSE) +
       labs(y=paste(strwrap(paste(input$empStatistic),width=35), collapse="\n"), 
            x="Sex",
@@ -649,7 +717,7 @@ server <- function(input, output, session) {
   })
   
   empAgeData <- reactive ({
-    empData$highlight <- ifelse((empData$Age.group == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
+    empData$highlight <- ifelse((empData$`Age group` == input$empAge), 1, ifelse((input$empAge == "15 years and over"),1,0))
     
     thismonth <- input$empRefPeriod[2]
     lastmonth <- seq(input$empRefPeriod[2], length=2, by=("-1 month"))[2]
@@ -663,17 +731,17 @@ server <- function(input, output, session) {
     return(subset(empData,
                   GEO == input$empGeo &
                     Sex == input$empSex &
-                    Age.group != "15 years and over" &
-                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7)) &
-                    Statistics == input$empStatistic))
+                    `Age group` != "15 years and over" &
+                    substr(refPeriod,0,7) %in% c(substr(c(thismonth, lastmonth, lastyear), 0, 7))))
   })
   
   output$empAgePlot <- renderGirafe({
     input$updateEmp
     isolate({empAgePlot <- ggplot(empAgeData()) + 
-      geom_col_interactive(aes(x=Age.group, y=VALUE, alpha = highlight, fill=month, tooltip=VALUE), position = "dodge") + 
+      geom_col_interactive(aes(x=`Age group`, y=unlist(empAgeData()[input$empStatistic]), alpha = highlight, 
+                               fill=month, tooltip=unlist(empAgeData()[input$empStatistic])), position = "dodge") + 
       theme_classic() + scale_fill_jco() + theme(text=element_text(family="Roboto"),legend.position = "bottom") +
-      scale_alpha(range = c(max(0.45, min(empAgeData()$highlight)),1)) +
+      scale_alpha(range = c(max(0.45, min(empAgeData()$highlight)),1)) + scale_y_continuous(labels = comma) +
       guides(alpha = FALSE) +
       labs(y=paste(strwrap(paste(input$empStatistic),width=35), collapse="\n"), 
            x="Age group", 
